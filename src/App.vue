@@ -53,7 +53,7 @@ export default {
         return;
       } else {
         try {
-      const response = await fetch('http://localhost:3000/api/protected', {
+      const response = await fetch('https://kacper-ecojourney2.onrender.com/api/protected', {
         headers: {
           'Authorization': `Bearer ${token}`
         }

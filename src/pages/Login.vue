@@ -344,7 +344,7 @@ export default {
   } }
 
       // // Check if the user is already logged in
-      // await fetch("http://localhost:3000/users/checkLoggedIn", {
+      // await fetch("https://kacper-ecojourney2.onrender.com/users/checkLoggedIn", {
       //   method: "GET",
       //   credentials: "include",
       // })
