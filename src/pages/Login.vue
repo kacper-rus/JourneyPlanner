@@ -176,7 +176,7 @@ export default {
         return;
       }
 
-      fetch('http://localhost:3000/users/register', {
+      fetch('https://kacper-ecojourney2.onrender.com/users/register', {
         method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -256,7 +256,7 @@ export default {
         return;
       }
 
-      fetch('http://localhost:3000/users/changePassword', {
+      fetch('https://kacper-ecojourney2.onrender.com/users/changePassword', {
         method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -292,7 +292,7 @@ export default {
     handleLogout() {
       this.$emit('handleLogoutApp')
       // Clear the session and update the UI
-      fetch("http://localhost:3000/users/logout", {
+      fetch("https://kacper-ecojourney2.onrender.com/users/logout", {
         method: "POST",
         credentials: "include",
       })
@@ -324,7 +324,7 @@ export default {
       return;
     } else {
       try {
-    const response = await fetch('http://localhost:3000/api/protected', {
+    const response = await fetch('https://kacper-ecojourney2.onrender.com/api/protected', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -366,7 +366,7 @@ export default {
       //   });
     },
     async createGroup() {
-      await fetch('http://localhost:3000/getGroups')
+      await fetch('https://kacper-ecojourney2.onrender.com/getGroups')
         .then(response => response.json())
         .then(async groups => {
 
@@ -378,7 +378,7 @@ export default {
           } else {
             // Code to create the group goes here
 
-        await fetch('http://localhost:3000/createGroup', {
+        await fetch('https://kacper-ecojourney2.onrender.com/createGroup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -415,7 +415,7 @@ export default {
     },
     async joinGroup() {
       console.log(this.username)
-      await fetch('http://localhost:3000/getGroups')
+      await fetch('https://kacper-ecojourney2.onrender.com/getGroups')
         .then(response => response.json())
         .then(async groups => {
           console.log(groups)
@@ -425,7 +425,7 @@ export default {
           console.log(groupToJoinID)
           console.log(this.username)
 
-      await fetch('http://localhost:3000/joinGroup', {
+      await fetch('https://kacper-ecojourney2.onrender.com/joinGroup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -441,7 +441,7 @@ export default {
           this.groupName = this.joinGroupName;
           this.startConfetti();
           this.joinGroupName = ''
-          const response2 = await axios.get('http://localhost:3000/users');
+          const response2 = await axios.get('https://kacper-ecojourney2.onrender.com/users');
           const usersArray = await response2.data;
           const groupFriends = await usersArray.filter(obj => obj.groupID == this.groupID);
           this.groupFriends = groupFriends;
@@ -475,7 +475,7 @@ export default {
     },
     async leaveGroup() {
     try {
-      const response = await axios.delete(`http://localhost:3000/joinGroup/${this.userID}`);
+      const response = await axios.delete(`https://kacper-ecojourney2.onrender.com/joinGroup/${this.userID}`);
       console.log(response.data); // Handle the response data here
       this.leaveGroupMessage = response.data.message
       this.groupID = null;
@@ -522,8 +522,6 @@ export default {
     this.loginErrorMsg = "";
 
 
-    const test = await axios.get('https://kacper-ecojourney2.onrender.com:10000/users');
-    console.log(test)
     const response = await axios.get('https://kacper-ecojourney2.onrender.com/users');
     const usersArray = await response.data;
     const user = await usersArray.find(obj => obj.username == this.username);
@@ -540,7 +538,7 @@ export default {
   // }
   //   this.$emit('updateUserID', userData)
     if (this.groupID) {
-      const response2 = await axios.get('http://localhost:3000/getGroups');
+      const response2 = await axios.get('https://kacper-ecojourney2.onrender.com/getGroups');
       const groupsArray = await response2.data;
       console.log(groupsArray)
       console.log(this.groupID)
