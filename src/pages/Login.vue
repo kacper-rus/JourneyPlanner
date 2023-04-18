@@ -9,7 +9,7 @@
       <div>
 
         <h1 v-show="showRegisterForm">Create an account to join our <span id="eco-bold-green">eco-friendly</span> family! :)</h1>
-        <h1 v-show="!showRegisterForm" >Login in to join our <span id="eco-bold-green">eco-friendly</span> family! :)</h1>
+        <h1 v-show="!showRegisterForm" >Login in to join our amazing <span id="eco-bold-green">eco-friendly</span> family! :)</h1>
         <div class="form-container">
           <div v-show="showRegisterForm" class="register-form">
           <form @submit.prevent="handleRegisterSubmit">
