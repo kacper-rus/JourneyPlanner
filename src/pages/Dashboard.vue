@@ -247,7 +247,7 @@ export default {
 
     try {
     const token = localStorage.getItem('token');
-    const response = await fetch('http://localhost:3000/api/protected', {
+    const response = await fetch('https://kacper-ecojourney2.onrender.com/api/protected', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -270,13 +270,13 @@ export default {
     this.groupID = "1";
 
     try {
-    const response = await axios.get('http://localhost:3000/getJourneys');
+    const response = await axios.get('https://kacper-ecojourney2.onrender.com/getJourneys');
     const journeyArray = response.data;
     console.log(journeyArray)
     // Data to the Piles
      this.loggedUserJourneys =  journeyArray.filter(obj => obj.userID === this.highlightUserID);
 
-    let usersResult = await axios.get('http://localhost:3000/users');
+    let usersResult = await axios.get('https://kacper-ecojourney2.onrender.com/users');
     const usersData = usersResult.data;
     console.log(usersData)
     this.loggedGroupJourneys =  usersData.filter(obj => obj.groupID === this.groupID);
