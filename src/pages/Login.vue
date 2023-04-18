@@ -211,7 +211,7 @@ export default {
      handleLoginSubmit() {
 
       
-      fetch('https://kacper-ecojourney2.onrender.com:10000/users/login', {
+      fetch('https://kacper-ecojourney2.onrender.com/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -522,7 +522,9 @@ export default {
     this.loginErrorMsg = "";
 
 
-    const response = await axios.get('http://localhost:3000/users');
+    const test = await axios.get('https://kacper-ecojourney2.onrender.com:10000/users');
+    console.log(test)
+    const response = await axios.get('https://kacper-ecojourney2.onrender.com/users');
     const usersArray = await response.data;
     const user = await usersArray.find(obj => obj.username == this.username);
     this.groupID = user.groupID
