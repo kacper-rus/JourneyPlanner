@@ -214,7 +214,7 @@ export default {
       // journes data, example: [{UserID: 1, CO2Output: 200}]
       journeyArray: [],
       highlightUserID: null,
-      loggedUserData: null,
+      loggedUserData: {userID: 4, co2Output: 305, distance: 490},
       loggedUserJourneys: [],
       filteredDatabyDate: [],
       currTab: 'Tab1',
