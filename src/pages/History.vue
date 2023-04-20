@@ -258,7 +258,7 @@
           console.log(response.data)
 
 
-          const modifiedJourneyArray = response.data.map(journey => {
+          let modifiedJourneyArray = response.data.map(journey => {
             return {
                 id: journey.journeyID,
                 journeyName: journey.journeyName,
@@ -269,6 +269,7 @@
                 CO2Output: journey.co2Output
             }
             });
+            modifiedJourneyArray = modifiedJourneyArray.sort((a, b) => b.id - a.id);
             console.log(modifiedJourneyArray)
           this.history = modifiedJourneyArray
           this.filteredHistory = modifiedJourneyArray

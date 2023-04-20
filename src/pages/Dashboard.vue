@@ -203,7 +203,7 @@ export default {
   data() {
     return {
       // journes data, example: [{UserID: 1, CO2Output: 200}]
-      journeyArray: [{id: 2, date: "04/04/2023", Start: "Manchester", Destination: "Southampton", distance: 127, co2Output: 2030}],
+      journeyArray: [{id: 2, date: "04/04/2023", Start: "Manchester", Destination: "Southampton", distance: 127, co2Output: 22}],
       highlightUserID: null,
       loggedUserData: {userID: 4, co2Output: 305, distance: 490},
       loggedUserJourneys: [],
