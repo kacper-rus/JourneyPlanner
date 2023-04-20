@@ -1,24 +1,9 @@
 <template>
-  <a class="dashboard-item" @click="currTab = 'Tab1'">Individual</a>
-  <a class="dashboard-item" @click="currTab = 'Tab2'">Group</a>
-  <div class="container" v-if="currTab=='Tab1'">
-
-    <!-- <div>
-    <datepicker v-model="fromDate" placeholder="From"></datepicker>
-    <datepicker v-model="toDate" placeholder="To"></datepicker>
-    <button @click="logDates">Log Dates</button>
+  <div class="buttons-container">
+    <a class="dashboard-item button-individual" @click="currTab = 'Tab1'; createChart()">Individual</a>
+    <a class="dashboard-item button-group" :class="{ disabled: isTab2Disabled }" @click="currTab = 'Tab2'" :style="{ color: tab2Color }">Group</a>
   </div>
-
-
-  <div v-for="(journey, index) in this.filteredDatabyDate" :key="index">
-      <p>Journey ID: {{ journey.journeyID }}</p>
-      <p>User ID: {{ journey.userID }}</p>
-      <p>Start: {{ journey.starPoint }}</p>
-      <p>Destination: {{ journey.endPoint }}</p>
-      <p>Distance: {{ journey.distance }}</p>
-      <p>Date: {{ journey.journeyDate }}</p>
-      <hr>
-    </div> -->
+  <div class="container" v-if="currTab=='Tab1'">
 
     <div class="speedometer-title">
       <h2>User Feedback Scale</h2>
@@ -27,9 +12,9 @@
     <vue-speedometer 
       :width="500"
       :needleHeightRatio="0.7"
-      :value="this.loggedUserData.distance && this.loggedUserData.co2Output ? (this.loggedUserData.co2Output / this.loggedUserData.distance).toFixed(2)*100 : 0"
+      :value="convertToSpeedometer((journeyArray[0].co2Output/journeyArray[0].distance).toFixed(2) ? (journeyArray[0].co2Output/journeyArray[0].distance).toFixed(2) : 0)"
       :segmentColors='["limegreen", "yellowgreen", "gold", "orange", "tomato"]'
-      currentValueText="CO2 Output"
+      currentValueText="CO2 Output per Km (kg)"
       :customSegmentLabels='[
         {
           text: "Very Good",
@@ -73,20 +58,26 @@
       <h2>Global Ranking Table</h2>
     </div>
 
-    <table class="globalRankingTable">
+    <div v-if="isLoading" class="loading-wheel">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    </div>
+    
+    <table class="globalRankingTable" v-else>
     <thead>
       <tr>
         <th>Rank</th>
-        <th>User ID</th>
-        <th>CO2 Output</th>
+        <th>Username</th>
+        <th>CO2 Output per Km (kg)</th>
       </tr>
     </thead>
     <tbody>
       <!-- Display the entries, sorted by CO2 score in ascending order -->
       <tr v-for="(entry, index) in journeyArray" :key="index" v-bind:class="{ 'highlight-row': entry.userID === highlightUserID }">
         <td>{{ index + 1 }}</td>
-        <td>{{ entry.userID }}</td>
-        <td>{{ entry.co2Output }}</td>
+        <td>{{ entry.username }}</td>
+        <td>{{ (entry.co2Output/entry.distance).toFixed(2) }}</td>
       </tr>
     </tbody>
     </table>
@@ -97,44 +88,46 @@
 
     <div class="statistics-container">
       <div class="statistic">
-        <h4>Average CO2 Output Per Journey</h4>
-        <p>15</p>
+        <h4>Average CO2 Output</h4>
+        <p>{{ this.loggedUserData.co2Output && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.co2Output / Object.keys(this.loggedUserJourneys).length).toFixed(2) : 0 }} Kg</p>
       </div>
       <div class="statistic">
         <h4>Total CO2 Output</h4>
-        <p>{{ this.loggedUserData.co2Output?  this.loggedUserData.co2Output: 0}}</p>
+        <p>{{ this.loggedUserData.co2Output?  this.loggedUserData.co2Output: 0}} Kg</p>
       </div>
       <div class="statistic">
-        <h4>Most Common Mode of Transport</h4>
-        <p>Car</p>
-      </div>
-      <div class="statistic">
-        <h4>Least Common Mode of Transport</h4>
-        <p>Train</p>
+        <h4>Total Distance Travelled</h4>
+        <p>{{ this.loggedUserData.distance?  this.loggedUserData.distance: 0}} Km</p>
       </div>
     </div>
 
     <div class="statistics-container">
       <div class="statistic">
-        <h4>Average CO2 Output Per Mile</h4>
-        <p>4</p>
+        <h4>Average CO2 Output Per Km</h4>
+        <p>{{ this.loggedUserData.distance && this.loggedUserData.co2Output ? (this.loggedUserData.co2Output / this.loggedUserData.distance).toFixed(2) : 0 }} Kg</p>
       </div>
       <div class="statistic">
         <h4>Average Journey Length</h4>
-        <p>30 Miles</p>
+        <p>{{ this.loggedUserData.distance && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.distance / Object.keys(this.loggedUserJourneys).length).toFixed(2) : 0 }} Km</p>
       </div>
       <div class="statistic">
         <h4>Total Journey Count</h4>
         <p>{{ Object.keys(this.loggedUserJourneys).length? Object.keys(this.loggedUserJourneys).length: 0  }}</p>
       </div>
-      <div class="statistic">
-        <h4>Total Distance Travelled</h4>
-        <p>300 Miles</p>
-      </div>
     </div>
 
+    <div class="doughnut-chart-title">
+      <h2>Mode of Transport Usage</h2>
+    </div>
+
+    <div class="chart-container">
+        <canvas id="myChart2"></canvas>
+    </div>
+    
   </div>
-  <div class="container" v-else>
+
+  
+  <div class="container" v-if="currTab=='Tab2'">
     <div class="groupRanking-table-title">
       <h2>Group Ranking Table</h2>
     </div>
@@ -143,18 +136,16 @@
     <thead>
       <tr>
         <th>Rank</th>
-        <th>User ID</th>
         <th>Username</th>
-        <th>CO2 Output</th>
+        <th>CO2 Output per Km (kg)</th>
       </tr>
     </thead>
     <tbody>
       <!-- Display the entries, sorted by CO2 score in ascending order -->
       <tr v-for="(entry, index) in cumulativeGroupJourneys" :key="index" v-bind:class="{ 'highlight-row': entry.userID === highlightUserID }">
         <td>{{ index + 1 }}</td>
-        <td>{{ entry.userID }}</td>
         <td>{{ entry.username }}</td>
-        <td>{{ entry.co2Output }}</td>
+        <td>{{ (entry.co2Output/entry.distance).toFixed(2) }}</td>
       </tr>
     </tbody>
     </table>
@@ -162,15 +153,14 @@
     <div class="group-statistics-title">
       <h2>Group Statistical Readings</h2>
     </div>
-
     <div class="statistics-container">
       <div class="statistic">
         <h4>Average CO2 Output Per Member</h4>
-        <p>{{ this.totalGroupCo2Output ? (this.totalGroupCo2Output/this.cumulativeGroupJourneys.length).toFixed(2) : 0}}</p>
+        <p>{{ this.totalGroupCo2Output ? (this.totalGroupCo2Output/this.cumulativeGroupJourneys.length).toFixed(2) : 0}} Kg</p>
       </div>
       <div class="statistic">
         <h4>Group Total CO2 Output</h4>
-        <p>{{ this.totalGroupCo2Output? this.totalGroupCo2Output: 0 }}</p>
+        <p>{{ this.totalGroupCo2Output? this.totalGroupCo2Output: 0 }} Kg</p>
       </div>
 
       <div class="statistic">
@@ -183,11 +173,11 @@
     <div class="statistics-container">
       <div class="statistic">
         <h4>Group Average CO2 Output Per Km</h4>
-        <p>{{this.totalGroupCo2Output && this.totalGroupCo2Output? (this.totalGroupCo2Output / this.totalGroupDistance).toFixed(2): 0}}</p>
+        <p>{{this.totalGroupCo2Output && this.totalGroupCo2Output? (this.totalGroupCo2Output / this.totalGroupDistance).toFixed(2): 0}} Kg</p>
       </div>
       <div class="statistic">
         <h4>Average Journey Length</h4>
-        <p>{{ (this.totalGroupDistance/this.loggedGroupJourneys.length).toFixed(2) }}</p>
+        <p>{{ (this.totalGroupDistance/this.loggedGroupJourneys.length).toFixed(2) }} Km</p>
       </div>
       <div class="statistic">
         <h4>Group Total Journey Count</h4>
@@ -227,7 +217,18 @@ export default {
       cumulativeGroupJourneys: [],
       totalGroupCo2Output: 0,
       totalGroupDistance: 0,
+      isLoading: true,
+      uniqueModesOfTransport: [],
+      modeOfTransportCounts: {},
     };
+  },
+  computed: {
+    isTab2Disabled() {
+      return this.groupID === null;
+    },
+    tab2Color() {
+      return this.isTab2Disabled ? 'grey' : '';
+    },
   },
   methods: {
     logDates() {
@@ -240,6 +241,63 @@ export default {
       console.log(this.filteredDatabyDate)
       console.log("From Date: "+this.fromDate)
       console.log("From Date: "+this.toDate)
+    },
+    convertToSpeedometer(value) {
+      console.log(value)
+    /*
+    Converts a value from 0 to 0.5 to a value from 0 to 1000, where 0 is very good and 1000 is very bad.
+    */
+    if (value <= 0) {
+      return 0;
+    } else if (value >= 0.5) {
+      return 1000;
+    } else {
+      console.log(Math.floor(value * 2000))
+      return Math.floor(value * 2000);
+    }
+  },
+
+  createChart() {
+
+  setTimeout(() => {
+    let xValues2 = this.uniqueModesOfTransport;
+  let yValues2 = this.modeOfTransportCounts;
+  let doughnutColors2 = ["#b91d47", "#1e7145", "#00aba9", ];
+  new Chart("myChart2", {
+    type: "doughnut",
+    data: {
+      labels: xValues2,
+      datasets: [{
+        backgroundColor: doughnutColors2,
+        data: yValues2
+      }]
+    },
+    options: {
+      title: {
+        display: false,
+        text: "Carbon Emissions",
+        fontSize: 30 
+      },
+      legend: {
+        labels: {
+          fontSize: 20,
+          fontStyle: "bold",
+          fontColor: "black"
+        }
+      },
+      plugins: {
+        legend: {
+          labels: {
+            fontSize: 25,
+            fontStyle: "bold",
+            fontColor: "black"
+          }
+        }
+      }
+    }
+  });
+  }, 500)
+
     }
   },
 
@@ -247,7 +305,7 @@ export default {
 
     try {
     const token = localStorage.getItem('token');
-    const response = await fetch('https://kacper-ecojourney2.onrender.com/api/protected', {
+    const response = await fetch('https://carbonjourneyplanner.onrender.com/api/protected', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -270,13 +328,34 @@ export default {
     this.groupID = "1";
 
     try {
-    const response = await axios.get('https://kacper-ecojourney2.onrender.com/getJourneys');
+    const response = await axios.get('https://carbonjourneyplanner.onrender.com/getJourneys');
     const journeyArray = response.data;
     console.log(journeyArray)
     // Data to the Piles
+    const uniqueModesOfTransport = journeyArray
+    .filter(journey => journey.userID === this.userID) // filter journeys for userID = 1
+    .map(journey => journey.modeOfTransport) // extract modeOfTransport values
+    .filter((modeOfTransport, index, self) => self.indexOf(modeOfTransport) === index); // get unique values
+
+    console.log(uniqueModesOfTransport);
+    this.uniqueModesOfTransport = uniqueModesOfTransport;
+
+
+    const modeOfTransportCounts = journeyArray
+    .filter(journey => journey.userID === this.userID) // filter journeys for userID = 1
+    .reduce((counts, journey) => {
+      const modeOfTransport = journey.modeOfTransport;
+      counts[modeOfTransport] = (counts[modeOfTransport] || 0) + 1;
+      return counts;
+    }, {});
+
+    const countArray = Object.values(modeOfTransportCounts);
+    this.modeOfTransportCounts = countArray
+    console.log(countArray);
+
      this.loggedUserJourneys =  journeyArray.filter(obj => obj.userID === this.highlightUserID);
 
-    let usersResult = await axios.get('https://kacper-ecojourney2.onrender.com/users');
+    let usersResult = await axios.get('https://carbonjourneyplanner.onrender.com/users');
     const usersData = usersResult.data;
     console.log(usersData)
     this.loggedGroupJourneys =  usersData.filter(obj => obj.groupID === this.groupID);
@@ -331,6 +410,7 @@ console.log(this.totalGroupCo2Output)
 
 
       this.filteredDatabyDate = this.loggedUserJourneys
+      console.log(journeyArray)
     // Just adds CO2 output where userID is the same
   let result = journeyArray.reduce((acc, obj) => {
     const index = acc.findIndex(item => item.userID === obj.userID);
@@ -346,21 +426,37 @@ console.log(this.totalGroupCo2Output)
   console.log(result)
   //
 
-  result = result.sort((a, b) => a.co2Output - b.co2Output);
+  result = result.sort((a, b) => (a.co2Output/a.distance) - (b.co2Output/b.distance));
   let foundUser = result.find(x => x.userID == this.userID)
   this.loggedUserData = foundUser
   console.log(this.loggedUserData)
 
   this.journeyArray = result;
+console.log(this.journeyArray)
+this.journeyArray.forEach(journeyObj => {
+  const userObj = usersData.find(user => user.userID === journeyObj.userID);
+  if (userObj) {
+    journeyObj.username = userObj.username;
+  }
+});
+console.log(this.journeyArray)
+  
 
   } catch (error) {
     console.error(error);
-  }
+  } finally {
+      this.isLoading = false;
+    }
+
+
+    console.log(this.uniqueModesOfTransport)
+    console.log(this.modeOfTransportCounts)
+    this.createChart()
 },
 
   mounted() {
-    
- console.log("try to dieeeee")
+
+
 }}
 </script>
 
@@ -565,5 +661,100 @@ console.log(this.totalGroupCo2Output)
   padding: 20px;
   align-items: center;
 }
+.loading-wheel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 2rem;
+}
 
+.loading-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin: 0 8px;
+  background-color: #333;
+  animation: loading-animation 0.8s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+.button-individual, .button-group {
+  background-color: #28a745;
+  font-size: 20px;
+  padding: 10px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  width: 106px;
+  display: flex;
+  justify-content: center;
+  color: white; /* added this line */
+}
+
+.button-individual:hover, .button-group:hover {
+  background-color: darkgreen;
+}
+
+.button-individual,
+  .button-group {
+    color: white !important;
+  }
+.buttons-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 10px;
+  margin-top: 20px;
+  margin-bottom: 20px;
+}
+.disabled {
+  pointer-events: none;
+  background-color: grey;
+  opacity: 0.8;
+}
+
+.chart-container {
+  width: 85%;
+}
+
+#myChart2 .chart-title {
+  font-size: 24px;
+}
+
+#myChart2 .segment-name {
+  font-size: 100px;
+}
+
+.doughnut-chart-title {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  margin-top: 20px;
+  margin-bottom: 15px;
+}
+
+.doughnut-chart-title h2 {
+  font-size: 24px;
+  font-weight: bold;
+  text-align: center;
+  margin: 0;
+}
+
+@keyframes loading-animation {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
+}
 </style>

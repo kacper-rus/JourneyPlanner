@@ -1,7 +1,6 @@
 const express = require('express')
 const app = require('./app');
 const mysql = require('mysql');
-const session = require('express-session');
 const { db } = require('./users/emissions.control');
 const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken');
@@ -9,25 +8,7 @@ const axios = require('axios');
 const secretKey = 'secret';
 const path = require('path')
 
-// Serve the static files from the dist directory
 app.use(express.static(path.join(__dirname, '..' ,'dist')))
-
-// Define your backend routes here
-
-
-// Serve the Vue.js app for all other requests
-
-app.use(session({
-  secret: 'mySecretKey',
-  resave: false,
-  saveUninitialized: true,
-  cookie: {
-    secure: false,
-    maxAge: 1000 * 60 * 10 // Session expires after 10 minute of inactivity
-  }
-}));
-
-
 
 app.get('/', (req, res) => {
 
@@ -133,28 +114,23 @@ app.post('/users/login', async (req, res) => {
     console.log(result)
     if (result.length == 0) {
       console.log("--------> User does not exist")
-      return res.status(404).json({ message: "The username provided does not exist." });
+      return res.status(404).json({ message: "The username provided does not exist.", loginCase: 2});
      } else {
       console.log("Normal password: "+password)
       console.log("Normal password: "+result[0].password)
       if (await bcrypt.compare(password, result[0].password)) {
-        req.session.user = {
-          username: result[0].username
-        };
-        res.cookie('sessionId', req.session.id, { httpOnly: true });
+
         let userID = result[0].userID
         const payload = { username, userID };
         const token = jwt.sign(payload, secretKey);
 
         console.log(token)
-        console.log("req.session:")
-        console.log(req.session)
         console.log("---------> Login Successful")
-        return res.status(200).json({ message: "Login successful!", token: token});
+        return res.status(200).json({ message: "Login successful!", token: token, loginCase: 0});
         } 
         else {
           console.log("---------> Password Incorrect")
-          return res.status(401).json({ message: "The password provided is incorrect." });
+          return res.status(401).json({ message: "The password provided is incorrect.", loginCase: 1});
         } 
 
      }
@@ -187,29 +163,8 @@ app.post('/users/login', async (req, res) => {
   });
 
 
-  app.get('/users/checkLoggedIn', (req, res) => {
-    console.log("/users/checkLoggedIn")
-    console.log("req.cookies.loggedIn: "+req.cookies.loggedIn)
-    console.log("req.cookies.username: "+req.cookies.username)
-    console.log("req.session.user: "+ req.session.user)
-    const username = req.cookies.username;
-      const loggedIn = req.cookies.loggedIn === 'true' && req.session.user;
-      if (req.cookies.loggedIn) {
-        console.log("logged")
-        return res.send({ loggedIn,  username});
-      } else {
-        console.log("Not logged in")
-        return res.status(404).json({ message: "Not logged in" });
-      }
-     
-  });
-
-
   app.post('/users/logout', (req, res) => {
-    req.session.destroy();
-    res.clearCookie('connect.sid');
-    res.clearCookie('loggedIn');
-    res.clearCookie('username');
+
     return res.send({ message: 'Logout successful.' });
 });
   
@@ -316,56 +271,108 @@ app.post('/createGroup', async (req, res) => {
       res.status(500).json({ error: 'Internal server error' });
     }
   });
+
+  app.post('/users/addJourney', async (req, res) => {
+    console.log("Adding Jounrey")
+    console.log(req.body)
+    let {userID, journeyName, modeOfTransport, journeyDate, startPoint, endPoint, co2Output, distance, duration} = req.body
+
+    // console.log("DATA LOGGED! ","Journey Name: ", journeyLogValue,"Journey date in DD/MM/YY: ", dateDDMMYYLogValue,"Journey Duration in HH:MM: ", timeHHMMLogValue,"Journey distance in km: ", distanceKmLogValue ,"Journey Emissions Total in Kg: ",emissionsKgLogValue);
+    // console.log("Start location: ",JSON.stringify(startCordLogValue),"End location: ", JSON.stringify(endCordLogValue));
   
+  
+    const sql = "INSERT INTO `journeys`(`userID`, `journeyName`, `modeOfTransport`, `journeyDate`, `startPoint`, `endPoint`, `co2Output`, `distance`, `duration`) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)";
+  
+      db.query(sql, [ userID, journeyName, modeOfTransport, journeyDate, startPoint, endPoint, co2Output, distance, duration], (error, results) => {
+  
+        if (error) {
+          console.log(error.sqlMessage)
+          return res.status(409).json({ message: error.sqlMessage });
+        } else {
+          console.log(results)
+          return res.status(201).json({ message: journeyName+" Journey successfuly created 😄" });
+        }
+  
+        });
+      
+      });
+  
+  
+  
+
+  // Functions
+  app.get('/co2emissions/:registrationNumber', async (req, res) => {
+    const registrationNumber = req.params.registrationNumber;
+    try {
+      const co2Emissions = await getCO2EmissionsFromReg(registrationNumber);
+      res.status(200).json({ co2Emissions });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Plate number invalid' });
+    }
+  });
+
   async function getCO2EmissionsFromReg(registrationNumber) {
     let co2Emissions;
-    const response = await axios({
-      method: 'post',
-      url: 'https://uat.driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles',
-      headers: {
-        'x-api-key': 'dD1IAGOEHG50l3rX5x0Qo43bLolPGfeP6lXHH8vm',
-        'Content-Type': 'application/json',
-      },
-      data: {
-        registrationNumber: registrationNumber,
-      },
-    });
-    const responseBody = response.data;
+    try {
+
+      const response = await axios({
+        method: 'post',
+        url: 'https://driver-vehicle-licensing.api.gov.uk/vehicle-enquiry/v1/vehicles',
+        headers: {
+          'x-api-key': 'F0ZhnoCuVn3pV85HwXQGQ7TqLJ4lzqXJ6ptZ64Nj',
+          'Content-Type': 'application/json',
+        },
+        data: {
+          registrationNumber: registrationNumber,
+        },
+      });
+
+      const responseBody = response.data;
   
-    switch (response.status) {
-      case 200:
-        co2Emissions = responseBody.co2Emissions;
-        return co2Emissions;
-      default:
-        throw new Error(`API returned status ${response.status}`);
+      switch (response.status) {
+        case 200:
+          co2Emissions = responseBody.co2Emissions;
+          return co2Emissions;
+        default:
+          throw new Error(`API returned status ${response.status}`);
+      }
+
+    } catch(e) {
+      console.log(e)
+      throw new Error(`Error in fetching plate number emissions`);
     }
+
+
   }
   
-const intervalInMilliseconds = 100 * 1000;
 
-// Define the function to execute the database query
-const executeQuery = () => {
-  const sql = 'SELECT * FROM `users`';
-  db.query(sql, (err) => {
-    if (err) {
-      console.error('An unexpected error occurred while fetching users.', err);
-      return;
-    }
-    console.log("Fecther data");
-  });
-};
+  const intervalInMilliseconds = 100 * 1000;
 
-// Call the function immediately to execute the query once
-executeQuery();
-
-// Call the function every minute to keep the database connection alive
-setInterval(executeQuery, intervalInMilliseconds);
-
-
-app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '..' ,'dist', 'index.html'))
-})
-
+  // Define the function to execute the database query
+  const executeQuery = () => {
+    const sql = 'SELECT * FROM `users`';
+    db.query(sql, (err) => {
+      if (err) {
+        console.error('An unexpected error occurred while fetching users.', err);
+        return;
+      }
+      console.log("Fecther data");
+    });
+  };
+  
+  // Call the function immediately to execute the query once
+  executeQuery();
+  
+  // Call the function every minute to keep the database connection alive
+  setInterval(executeQuery, intervalInMilliseconds);
+  
+  
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..' ,'dist', 'index.html'))
+  })
+  
+// Server 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);

@@ -4,11 +4,14 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Dashboard from './pages/Dashboard.vue'
 import Login from './pages/Login.vue'
 import JourneyPlanner from './pages/JourneyPlanner.vue'
+import History from './pages/History.vue'
 
 const routes = [
   {path: '/', component: JourneyPlanner},
   {path: '/dashboard', component: Dashboard},
-  {path: '/login', component: Login}
+  {path: '/login', component: Login},
+  {path: '/history', component: History},
+  
 ]
 
 const router = createRouter({

@@ -9,7 +9,7 @@
       <div>
 
         <h1 v-show="showRegisterForm">Create an account to join our <span id="eco-bold-green">eco-friendly</span> family! :)</h1>
-        <h1 v-show="!showRegisterForm" >Login in to join our amazing <span id="eco-bold-green">eco-friendly</span> family! :)</h1>
+        <h1 v-show="!showRegisterForm" >Login in to join our <span id="eco-bold-green">eco-friendly</span> family! :)</h1>
         <div class="form-container">
           <div v-show="showRegisterForm" class="register-form">
           <form @submit.prevent="handleRegisterSubmit">
@@ -91,7 +91,12 @@
     </div>
     <br/>
     <div v-if="!groupName"><p>Join a group to see your friends!</p></div>
-    <div v-if="groupName">
+    <div v-if="isLoading" class="loading-wheel">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+  </div>
+    <div v-if="groupName && !isLoading" >
     <table class="globalRankingTable" >
     <thead>
       <tr>
@@ -161,6 +166,7 @@ export default {
       groupID: null,
       groupFriends: [],
       leaveGroupMessage: '',
+      isLoading: true,
     }
   },
   methods: {
@@ -176,7 +182,7 @@ export default {
         return;
       }
 
-      fetch('https://kacper-ecojourney2.onrender.com/users/register', {
+      fetch('https://carbonjourneyplanner.onrender.com/users/register', {
         method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -211,7 +217,7 @@ export default {
      handleLoginSubmit() {
 
       
-      fetch('https://kacper-ecojourney2.onrender.com/users/login', {
+      fetch('https://carbonjourneyplanner.onrender.com/users/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -232,6 +238,7 @@ export default {
         }
       })
       .then( data => {
+        if (data.loginCase == 0) {
         this.loginErrorMsg = data.message;
         console.log(data)
         localStorage.setItem('token', data.token);
@@ -240,6 +247,18 @@ export default {
         console.log("6999")
         this.loginPassword = "";
         this.$router.push('/')
+        }
+        else if (data.loginCase == 1){
+          this.loginPassword = "";
+          this.showMessage('Oh no!', data.message, 'warning');
+          return;
+        }
+        else if (data.loginCase == 2) {
+          this.loginPassword = "";
+          this.showMessage('Oh no!', data.message, 'warning');
+          return;
+        }
+
       })
       .catch(error => {
         console.log(error)
@@ -256,7 +275,7 @@ export default {
         return;
       }
 
-      fetch('https://kacper-ecojourney2.onrender.com/users/changePassword', {
+      fetch('https://carbonjourneyplanner.onrender.com/users/changePassword', {
         method: 'POST',
           headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -292,7 +311,7 @@ export default {
     handleLogout() {
       this.$emit('handleLogoutApp')
       // Clear the session and update the UI
-      fetch("https://kacper-ecojourney2.onrender.com/users/logout", {
+      fetch("https://carbonjourneyplanner.onrender.com/users/logout", {
         method: "POST",
         credentials: "include",
       })
@@ -324,7 +343,7 @@ export default {
       return;
     } else {
       try {
-    const response = await fetch('https://kacper-ecojourney2.onrender.com/api/protected', {
+    const response = await fetch('https://carbonjourneyplanner.onrender.com/api/protected', {
       headers: {
         'Authorization': `Bearer ${token}`
       }
@@ -344,7 +363,7 @@ export default {
   } }
 
       // // Check if the user is already logged in
-      // await fetch("https://kacper-ecojourney2.onrender.com/users/checkLoggedIn", {
+      // await fetch("https://carbonjourneyplanner.onrender.com/users/checkLoggedIn", {
       //   method: "GET",
       //   credentials: "include",
       // })
@@ -366,7 +385,7 @@ export default {
       //   });
     },
     async createGroup() {
-      await fetch('https://kacper-ecojourney2.onrender.com/getGroups')
+      await fetch('https://carbonjourneyplanner.onrender.com/getGroups')
         .then(response => response.json())
         .then(async groups => {
 
@@ -378,7 +397,7 @@ export default {
           } else {
             // Code to create the group goes here
 
-        await fetch('https://kacper-ecojourney2.onrender.com/createGroup', {
+        await fetch('https://carbonjourneyplanner.onrender.com/createGroup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -415,7 +434,7 @@ export default {
     },
     async joinGroup() {
       console.log(this.username)
-      await fetch('https://kacper-ecojourney2.onrender.com/getGroups')
+      await fetch('https://carbonjourneyplanner.onrender.com/getGroups')
         .then(response => response.json())
         .then(async groups => {
           console.log(groups)
@@ -425,7 +444,7 @@ export default {
           console.log(groupToJoinID)
           console.log(this.username)
 
-      await fetch('https://kacper-ecojourney2.onrender.com/joinGroup', {
+      await fetch('https://carbonjourneyplanner.onrender.com/joinGroup', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ 
@@ -441,13 +460,20 @@ export default {
           this.groupName = this.joinGroupName;
           this.startConfetti();
           this.joinGroupName = ''
-          const response2 = await axios.get('https://kacper-ecojourney2.onrender.com/users');
+          try {
+            this.isLoading = true;
+          const response2 = await axios.get('https://carbonjourneyplanner.onrender.com/users');
           const usersArray = await response2.data;
           const groupFriends = await usersArray.filter(obj => obj.groupID == this.groupID);
           this.groupFriends = groupFriends;
+          this.isLoading = false;
           console.log(response2)
           console.log(usersArray)
           console.log(groupFriends)
+          }catch(e){
+            console.log(e)
+          }
+
           return response.json();
         } else {
           return response.json();
@@ -475,7 +501,7 @@ export default {
     },
     async leaveGroup() {
     try {
-      const response = await axios.delete(`https://kacper-ecojourney2.onrender.com/joinGroup/${this.userID}`);
+      const response = await axios.delete(`https://carbonjourneyplanner.onrender.com/joinGroup/${this.userID}`);
       console.log(response.data); // Handle the response data here
       this.leaveGroupMessage = response.data.message
       this.groupID = null;
@@ -521,8 +547,8 @@ export default {
     console.log("this.username: "+this.username)
     this.loginErrorMsg = "";
 
-
-    const response = await axios.get('https://kacper-ecojourney2.onrender.com/users');
+    try {
+      const response = await axios.get('https://carbonjourneyplanner.onrender.com/users');
     const usersArray = await response.data;
     const user = await usersArray.find(obj => obj.username == this.username);
     this.groupID = user.groupID
@@ -538,15 +564,20 @@ export default {
   // }
   //   this.$emit('updateUserID', userData)
     if (this.groupID) {
-      const response2 = await axios.get('https://kacper-ecojourney2.onrender.com/getGroups');
+      const response2 = await axios.get('https://carbonjourneyplanner.onrender.com/getGroups');
       const groupsArray = await response2.data;
       console.log(groupsArray)
       console.log(this.groupID)
       const groupName = await groupsArray.find(obj => obj.groupID == this.groupID).groupName;
       console.log(groupName)
-
       this.groupName = groupName     
     }
+    } catch(e) {
+      console.log(e)
+    } finally {
+      this.isLoading = false;
+    }
+
 
     
 
@@ -586,6 +617,9 @@ export default {
     border: 1px solid #ccc;
     border-radius: 5px;
     box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+    width: 50%;
+    margin: auto;
+    margin-top: 2rem;
   }
 
   label {
@@ -714,6 +748,7 @@ cursor: pointer;
 p {
   width: 70%;
   margin: auto;
+  padding-top: 5px;
 }
 body {
   overflow-y: scroll;
@@ -752,5 +787,40 @@ body {
   font-weight: bold;
   text-align: center;
   margin: 0;
+}
+
+.loading-wheel {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.loading-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin: 0 8px;
+  background-color: #333;
+  animation: loading-animation 0.8s ease-in-out infinite;
+}
+
+.loading-dot:nth-child(2) {
+  animation-delay: 0.2s;
+}
+
+.loading-dot:nth-child(3) {
+  animation-delay: 0.4s;
+}
+
+@keyframes loading-animation {
+  0% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.5);
+  }
+  100% {
+    transform: scale(1);
+  }
 }
 </style>

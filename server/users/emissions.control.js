@@ -19,11 +19,20 @@ function handleDisconnect() {
   db.connect((err) => {
     if (err) {
       console.error('Failed to connect to MySQL database:', err);
+      setTimeout(handleDisconnect, 2000);
     } else {
       console.log('Connected to MySQL database in the cloud :)');
     }
   });
 
+  db.on('error', (err) => {
+    console.error('MySQL database connection error:', err);
+    if (err.code === 'PROTOCOL_CONNECTION_LOST') {
+      handleDisconnect();
+    } else {
+      throw err;
+    }
+  });
 }
 
 handleDisconnect();

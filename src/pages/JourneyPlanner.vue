@@ -1,6 +1,6 @@
 <template>
   <div class="input-boxes">
-    <form @submit.prevent="submitForm">
+    <form @submit.prevent="callFirstFunction">
       <table>
         <tr>
           <td><input type="text" id="OriginBox" name="OriginBox" placeholder="Origin"></td>
@@ -125,7 +125,7 @@
                   <input type="text" id="dvla-input" name="dvla-input" placeholder="BD51 SMR" maxlength="8"><br>
                 </td>
                 <td>
-                  <button id="dvla-submit-button" type="submit">Submit</button>
+                  <button id="dvla-submit-button" type="submit" >Submit</button>
                 </td>
           </tr>
           <tr>
@@ -147,23 +147,23 @@
           </div>
         </div>
         <div class="row">
-          <div class="label">Custom</div>
-          <div class="bar car"></div>
+          <div class="label">Selected</div>
+          <div class="bar custom"></div>
           <div class="value"></div>
         </div>
         <div class="row">
           <div class="label">Car</div>
-          <div class="bar bus"></div>
+          <div class="bar car"></div>
           <div class="value"></div>
         </div>
         <div class="row">
           <div class="label">Transit</div>
-          <div class="bar train"></div>
+          <div class="bar transit"></div>
           <div class="value"></div>
         </div>
         <div class="row">
           <div class="label">Walk‎ </div>
-          <div class="bar bicycle"></div>
+          <div class="bar walk"></div>
           <div class="value"></div>
         </div>
           <div class="scale-line"></div>
@@ -190,7 +190,9 @@
   
 <script>
 //import co2 data calculation functions
+import Swal from 'sweetalert2';
 import * as dataCalcFunctions from "@/dataFunctionsTEST.js";
+const axios = require('axios');
 //import { toFormData } from "axios";
 
 //tests to make sure functions importing properly
@@ -201,12 +203,9 @@ console.log("TEST", dataCalcFunctions.calculateFlightCO2('long_haul_uk_average',
 
 
 /* eslint-disable no-undef */
-
 //import { removeDotSegments } from 'uri-js';
-
 //import { removeDotSegments } from 'uri-js';
 //import { setBlockTracking } from 'vue';
-
 /* eslint-disable */
 
 
@@ -215,7 +214,16 @@ export default {
   data() {
     return { lat: "", lng: "", map: null, box: null,selected: "",}
   },
-  created() {
+  props: {
+    userID: {
+      type: Number,
+      required: true,
+    }},
+  
+  async created() {
+    console.log(this.userID)
+    console.log("ASDAKJSAKDKSADSADSALDSALK");
+
   },
 
   //"https://maps.googleapis.com/maps/api/js?key=AIzaSyA5K5yoDu6AnALOdV-VzcINZg1bKXH5-TA&libraries=places";
@@ -253,6 +261,7 @@ mounted() {
         const row3Selected = document.querySelector('.row3 input[type="radio"]:checked');
 
         if (row1Selected && row1Selected.value === "Car") {
+          global.vehcalType = "Car";
           document.querySelector('.row2').style.display = "flex";
 
         }else{
@@ -260,12 +269,12 @@ mounted() {
           document.querySelector('.row2').style.display = "none";
         }
 
-        if (row2Selected && row2Selected.value !== "custom") {
+        if (row2Selected && row2Selected.value !== "custom" && row1Selected.value === "Car") {
           document.querySelector('.row3').style.display = "flex";
           var regfrom = document.getElementById("reg-form")
           regfrom.style.display="none";
 
-        }else if(row2Selected && row2Selected.value === "custom"){
+        }else if(row2Selected && row2Selected.value === "custom" && row1Selected.value === "Car"){
           document.querySelector('.row3').style.display = "none";
           document.querySelectorAll('.row3 input[type="radio"]').forEach(input => {input.checked = false;});
           var regfrom = document.getElementById("reg-form")
@@ -287,10 +296,16 @@ mounted() {
         }; 
 
         if (row1Selected && row1Selected.value === "Plane") {
+          global.vehcalType = "plane";
+          var regfrom = document.getElementById("reg-form")
+          regfrom.style.display="none";
           var outputArray = outputArrayEmpty
           outputArray.mode = row1Selected.value
         }
         if (row1Selected && row1Selected.value === "Transit") {
+          global.vehcalType = "Transit";
+          var regfrom = document.getElementById("reg-form")
+          regfrom.style.display="none";
           var outputArray = outputArrayEmpty
           outputArray.mode = row1Selected.value
 
@@ -313,15 +328,53 @@ mounted() {
           const user_text = instructions_public_transport; 
           const box3ParagraphClone = document.querySelector('#clone p');
           box3ParagraphClone.innerHTML = user_text;
+
+          //populates the custom bar in barchart
+          var customAverageCo2PerKm = ((transitCo2Output*1000) / transitDistance1).toFixed(0);
+          var customValue = document.querySelector('.custom + .value');
+          var customBar = document.querySelector('.custom');
+          customBar.style.width = customAverageCo2PerKm + 'px';
+          customValue.textContent = customAverageCo2PerKm + ' g/km';
+          console.log("TRANSIC VALUE",customAverageCo2PerKm)
           }
       
           if (row1Selected && row1Selected.value === "Walk") {
-          var outputArray = outputArrayEmpty
-          outputArray.mode = row1Selected.value
+          global.vehcalType = "Walk";
+          var regfrom = document.getElementById("reg-form")
+          regfrom.style.display="none";
+
+
+          var distanceNumberWalk = parseFloat(walkDistance.replace("km", ""));
+          var distanceDisplay = document.getElementById("distance");
+          distanceDisplay.value = distanceNumberWalk;
+
+          var emissionsInput = document.getElementById("emissions");
+          emissionsInput.value = 0;
+
+          var durationInput = document.getElementById("duration");
+          const totalMinutes3 = Math.round(durationInMinutes3);
+          // Calculate the hours and minutes
+          const hours1 = Math.floor(totalMinutes3 / 60);
+          const minutes1 = totalMinutes3 % 60;
+          // Format the time string as hh:mm
+          const timeString1 = `${hours1.toString().padStart(2, '0')}:${minutes1.toString().padStart(2, '0')}`;
+          durationInput.value = timeString1;
+
+          const user_text_walk = instructions_walk; 
+          const box3ParagraphClone = document.querySelector('#clone p');
+          box3ParagraphClone.innerHTML = user_text_walk;
+
+                    //populates the custom bar in barchart
+          var customValue = document.querySelector('.custom + .value');
+          var customBar = document.querySelector('.custom');
+          customBar.style.width = 3 + 'px';
+          customValue.textContent = 0 + ' g/km';
+          console.log("WALK VALUE",0)
+          
           }
 
 
-        if (row1Selected && row2Selected && row3Selected) {
+        if (row1Selected && row2Selected && row3Selected && row1Selected.value === "Car") {
           var outputArray = {
                         mode: row1Selected.value,
                         carType: row2Selected.value,
@@ -350,14 +403,17 @@ mounted() {
           const box3ParagraphClone = document.querySelector('#clone p');
           box3ParagraphClone.innerHTML = user_text;
 
+          //populates the custom bar in barchart
+          var customAverageCo2PerKm = ((emissionsInput.value * 1000) / distanceDisplay.value).toFixed(0)
+          var customValue = document.querySelector('.custom + .value');
+          var customBar = document.querySelector('.custom');
+          customBar.style.width = customAverageCo2PerKm + 'px';
+          customValue.textContent = customAverageCo2PerKm + ' g/km';
+          console.log(customAverageCo2PerKm)
+
         }
 
-        
-
-
         console.log(outputArray)
-        //console.log(distanceNumber)
-        //console.log(co2Output)
         return(outputArray)
 
       });
@@ -387,75 +443,150 @@ mounted() {
         });
       };
     },
+    showMessage(title, text, icon) {
+      Swal.fire({
+        title: title,
+        text: text,
+        icon: icon,
+        confirmButtonText: 'OK'
+      });
+    },
    
     logRoute() {
+    var typeLogValue = vehcalType;
     var journeyLogValue = document.getElementById("toFrom").value;
     var dateDDMMYYLogValue = document.getElementById("date").value;
     var timeHHMMLogValue = document.getElementById("duration").value;
     var distanceKmLogValue = document.getElementById("distance").value;
-    var emissionsKgValue = document.getElementById("emissions").value;
+    var emissionsKgLogValue = document.getElementById("emissions").value;
+    var startCordLogValue = originLatLng;
+    var endCordLogValue = destLatLng;
 
-    console.log("DATA LOGGED! ","Journey Name: ", journeyLogValue,"Journey date in DD/MM/YY: ", dateDDMMYYLogValue,"Journey Duration in HH:MM: ", timeHHMMLogValue," distance: ",distanceKmLogValue ," Journey Emissions Total in Kg: ",emissionsKgValue);
-    
+    console.log("DATA LOGGED! ","Journey Mode: ",typeLogValue ,"Journey Name: ", journeyLogValue,"Journey date in DD/MM/YY: ", dateDDMMYYLogValue,"Journey Duration in HH:MM: ", timeHHMMLogValue,"Journey distance in km: ", distanceKmLogValue ,"Journey Emissions Total in Kg: ",emissionsKgLogValue);
+    console.log("Start location: ",JSON.stringify(startCordLogValue),"End location: ", JSON.stringify(endCordLogValue));
+    const journeyData = {
+      userID: this.userID,
+      journeyName: journeyLogValue,
+      modeOfTransport: typeLogValue,
+      journeyDate: dateDDMMYYLogValue,
+      startPoint: JSON.stringify(startCordLogValue),
+      endPoint: JSON.stringify(endCordLogValue),
+      co2Output: emissionsKgLogValue,
+      distance: distanceKmLogValue,
+      duration: timeHHMMLogValue
+  };
+
+    axios.post('https://carbonjourneyplanner.onrender.com/users/addJourney', journeyData)
+      .then((response) => {
+        console.log(response.data);
+        this.showMessage('Success!', response.data.message, 'success');
+      })
+      .catch((error) => {
+        this.showMessage('Oh no!', "There was a problem creating a journey, try later", 'error');
+        console.error(error);
+      });
   
   },
 
-    submitDvlaForm(outputArray){
+    async submitDvlaForm(outputArray){
+
       var dvlaErrorElement = document.getElementById('dvlaError');
       var regNumber = document.getElementById('dvla-input').value;
-      if (/^[A-Z]{2}[0-9]{2}\s?[A-Z]{3}$/.test(regNumber)) {
-        console.log(`${regNumber} is a valid UK number plate!`);
-        dvlaErrorElement.textContent = ""
-        outputArray.fuleType = ""
-        outputArray.carType = ""
-        outputArray.validRegNumb = regNumber
-        console.log(outputArray)
 
-      } else {
-        var dvlaErrorString = (`${regNumber} is not a valid UK number plate.`);
+      try {
+        //AA19SRN
+        const response = await axios.get('https://carbonjourneyplanner.onrender.com/co2emissions/'+regNumber);
+        const regPlateco2Data = response.data.co2Emissions;
+        console.log(regPlateco2Data)
+
+        var distanceNumber = parseFloat(carDistance.replace("km", ""));
+        
+        var durationInput = document.getElementById("duration");
+        const totalMinutes1 = Math.round(durationInMinutes1);
+        // Calculate the hours and minutes
+        const hours1 = Math.floor(totalMinutes1 / 60);
+        const minutes1 = totalMinutes1 % 60;
+        // Format the time string as hh:mm
+        const timeString1 = `${hours1.toString().padStart(2, '0')}:${minutes1.toString().padStart(2, '0')}`;
+        durationInput.value = timeString1;
+
+        var distanceDisplay = document.getElementById("distance");
+        distanceDisplay.value = distanceNumber;
+
+        const user_text = instructions_car; 
+        const box3ParagraphClone = document.querySelector('#clone p');
+        box3ParagraphClone.innerHTML = user_text;
+
+        var emissionsInput = document.getElementById("emissions");
+        emissionsInput.value = (distanceNumber *(regPlateco2Data/1000)).toFixed(3);
+
+        var customValue = document.querySelector('.custom + .value');
+        var customBar = document.querySelector('.custom');
+        customBar.style.width = regPlateco2Data + 'px';
+        customValue.textContent = regPlateco2Data + ' g/km';
+
+        var dvlaInputText = document.getElementById('dvla-input');
+        dvlaInputText.value = '';
+
+
+     
+      } catch{
+          var dvlaErrorString = (`${regNumber} is not a valid UK number plate.`);
         console.log(dvlaErrorString);
         var dvlaInputText = document.getElementById('dvla-input');
         dvlaInputText.value = '';
         dvlaErrorElement.textContent = dvlaErrorString;
         dvlaErrorElement.classList.remove('fade-out'); // remove the fade-out class if it was applied before
         
+        var emissionsInput = document.getElementById("emissions");
+        emissionsInput.value = (0);
+
         // after 3 seconds, apply the fade-out class to the error message
         setTimeout(() => {
           dvlaErrorElement.classList.add('fade-out');
         }, 2000);
       }
-
-      return(outputArray)
     },
 
     barChartUpdate(first,second,third,fourth){
-      var carEmissions = first;
-      var busEmissions = second;
-      var trainEmissions = third;
-      var bicycleEmissions = fourth;
+      var customEmissions = first;
+      var carEmissions = second;
+      var transitEmissions = third;
+      var walkEmissions = fourth;
+
+      /*var customBar = document.querySelector('.custom');
+      customBar.style.width = carEmissions + 'px';
+      customValue.textContent = carEmissions + ' g/km';*/
 
       var carBar = document.querySelector('.car');
-      var busBar = document.querySelector('.bus');
-      var trainBar = document.querySelector('.train');
-      var bicycleBar = document.querySelector('.bicycle');
+      var transitBar = document.querySelector('.transit');
+      var walkBar = document.querySelector('.walk');
 
       var carValue = document.querySelector('.car + .value');
-      var busValue = document.querySelector('.bus + .value');
-      var trainValue = document.querySelector('.train + .value');
-      var bicycleValue = document.querySelector('.bicycle + .value');
-
+      var transitValue = document.querySelector('.transit + .value');
+      var walkValue = document.querySelector('.walk + .value');
+      
       carBar.style.width = carEmissions + 'px';
-      busBar.style.width = busEmissions + 'px';
-      trainBar.style.width = trainEmissions + 'px';
-      bicycleBar.style.width = bicycleEmissions + 'px';
+      transitBar.style.width = transitEmissions + 'px';
+      walkBar.style.width = walkEmissions + 'px';
 
-      carValue.textContent = carEmissions + ' g/km';
-      busValue.textContent = busEmissions + ' g/km';
-      trainValue.textContent = trainEmissions + ' g/km';
-      bicycleValue.textContent = 0 + ' g/km';
+      carValue.textContent = carEmissions.toFixed(0) + ' g/km';
+      transitValue.textContent = transitEmissions + ' g/km';
+      walkValue.textContent = 0 + ' g/km';
+      
 
     },
     
+    callFirstFunction() {
+  // call the first function
+    this.submitForm();
+
+    // call the second function after 5 seconds
+    setTimeout(() => {
+      this.callingBarChart();
+    }, 1000);
+    },
+
     submitForm() {
       //sets date to todays date
       const today = new Date().toISOString().substr(0, 10);
@@ -487,11 +618,11 @@ mounted() {
         let geocoder = new google.maps.Geocoder();
         geocoder.geocode({ address: origin }, function (results, status) {
           if (status == google.maps.GeocoderStatus.OK) {
-            let originLatLng = results[0].geometry.location;
+            global.originLatLng = results[0].geometry.location;
             console.log(originLatLng)
             geocoder.geocode({ address: destination }, function (results, status) {
               if (status == google.maps.GeocoderStatus.OK) {
-                let destLatLng = results[0].geometry.location;
+                global.destLatLng = results[0].geometry.location;
 
                 // Display the map with the origin and destination locations
                 let map = new google.maps.Map(document.getElementById("map"), {
@@ -520,7 +651,13 @@ mounted() {
                   strokeColor: "#ffe733",
                   strokeOpacity: 1,
                   strokeWeight: 4,
-              };
+                };
+
+                let lineOptions3 = { 
+                    strokeColor: "#6197d7",
+                    strokeOpacity: 1,
+                    strokeWeight: 4,
+                };
 
                 //directionsDisplay.addListener("click", function(event) {
                 // do something when polyline is clicked
@@ -533,6 +670,9 @@ mounted() {
 
                 let directionsService2 = new google.maps.DirectionsService();
                 let directionsDisplay2 = new google.maps.DirectionsRenderer({ polylineOptions: lineOptions2 });
+
+                let directionsService3 = new google.maps.DirectionsService();
+                let directionsDisplay3 = new google.maps.DirectionsRenderer({ polylineOptions: lineOptions3 });
 
 
                 let request1 = {
@@ -548,7 +688,15 @@ mounted() {
                   travelMode: google.maps.TravelMode.TRANSIT,
                   unitSystem: google.maps.UnitSystem.METRIC
                 };
+
+                let request3 = {
+                  origin: originLatLng,
+                  destination: destLatLng,
+                  travelMode: google.maps.TravelMode.WALKING,
+                  unitSystem: google.maps.UnitSystem.METRIC
+                };                
                 
+                //TRANSIT
                 directionsService2.route(request2, function (result, status) {
                   if (status == google.maps.DirectionsStatus.OK) {
                     // get the steps of the route
@@ -590,10 +738,10 @@ mounted() {
                     var textOutputTransit = "Public Transport Distance: " + transitDistance
                   
                     const transitDistanceNumber = parseFloat(transitDistance.replace("km", ""));
-                    var transitCo2Average = (transitCo2Output * 1000) / transitDistanceNumber
+                    global.transitCo2Average = (transitCo2Output * 1000) / transitDistanceNumber
                     console.log("transit co2 / distance=",(transitCo2Average))
                     console.log("TESTTT")
-
+                    //barChartUpdate(0, 138.4, transitCo2Average, 3);
 
 
                   } else {
@@ -601,7 +749,7 @@ mounted() {
                   }
                 });
                 
-                //let distance1;
+                //CAR
                 directionsService1.route(request1, function (result, status) {
                   if (status == google.maps.DirectionsStatus.OK) {
                     // get the steps of the route
@@ -613,7 +761,6 @@ mounted() {
                     console.log("Car directions",steps[i].instructions);
                     instructions_car += (i+1)+ ") " + steps[i].instructions + "<br>";
                     }
-
 
                     directionsDisplay1.setDirections(result);
                     directionsDisplay1.setMap(map);
@@ -630,8 +777,8 @@ mounted() {
 
 
                     //updates the empty paragraph with car distance text and calculated value
-                    var myCarDistanceElementCar = document.getElementById("car-distance")
-                    myCarDistanceElementCar.innerHTML = textOutputCar
+                    //var myCarDistanceElementCar = document.getElementById("car-distance")
+                    //myCarDistanceElementCar.innerHTML = textOutputCar
 
                     console.log("transit co2 / distance=",(138.4))
 
@@ -639,6 +786,44 @@ mounted() {
                     console.log("Directions request failed: " + status);
                   }
                 });
+
+                //WALK ------------------------------------------------------
+                directionsService3.route(request3, function (result, status) {
+                  if (status == google.maps.DirectionsStatus.OK) {
+                    // get the steps of the route
+                    var steps = result.routes[0].legs[0].steps;
+                    global.instructions_walk = "Walk Directions: <br>";
+
+                    // loop through the steps and log the instructions
+                    for (var i = 0; i < steps.length; i++) {
+                    console.log("Walk directions",steps[i].instructions);
+                    instructions_walk += (i+1)+ ") " + steps[i].instructions + "<br>";
+                    }
+
+
+                    directionsDisplay3.setDirections(result);
+                    directionsDisplay3.setMap(map);
+
+                    //get route length for walking
+                    global.walkDistance = result.routes[0].legs[0].distance.text
+                    console.log("walkDistance (walk total) = ", walkDistance)
+                  
+                    var durationInSeconds3 = result.routes[0].legs[0].duration.value;
+                    global.durationInMinutes3 = durationInSeconds3 / 60;
+                    console.log("walkDistance (walk total time) = ", durationInMinutes3)
+
+
+
+                  } else {
+                    console.log("Directions request failed: " + status);
+                  }
+                });
+
+
+
+
+
+
               } else {
                 console.log("Geocode failed for destination address: " + status);
               }
@@ -646,13 +831,25 @@ mounted() {
           } else {
             console.log("Geocode failed for origin address: " + status);
           }
+
         });
+        
       }
 
-      console.log("TEST", transitCo2Average)
-      this.barChartUpdate(0, 138.4, transitCo2Average, 3);
+       // this.test();
+
+      
+      //console.log("TEST", transitCo2Average)
+      
+      
 
     },
+
+    callingBarChart(){
+      this.barChartUpdate(0, 170, transitCo2Average.toFixed(0), 3);
+
+    },
+
 
     hideLeftBox(){
       var leftBox = document.getElementById("box1inner")
@@ -1290,5 +1487,17 @@ button i {
         transform: translate(-38px, 5px);
     }
   
+    .custom{
+      background-color: #b7b7b7;
+    }
 
+    .car{
+      background-color: orange;
+    }
+    .transit{
+      background-color: yellow;
+    }
+    .walk{
+      background-color: green;
+    }
 </style>

@@ -1,10 +1,11 @@
 <template>
-  <header class="app-header">
+ <header class="app-header">
     <nav class="navbar navbar-expand-sm navbar-dark" style="background-color:Transparent; color:white">
-      <a class="navbar-brand" href="logo">LOGO</a>
+      <a id="logo" class="navbar-brand" href="/"><img style="height:50px" src="../public/Logo.png"/></a>
       <ul class="navbar-nav ml-auto">
         <li class="nav-item" ><router-link class="nav-link" to="/">Journey Planner <span class="sr-only">(current)</span></router-link></li>
         <li v-if="loggedIn" class="nav-item"><router-link class="nav-link" to="/dashboard">Dashboard</router-link></li>
+        <li v-if="loggedIn" class="nav-item"><router-link class="nav-link" to="/history">History</router-link></li>
         <li class="nav-item"><router-link class="nav-link" to="/login">{{logoutMsg}}</router-link></li>
       </ul>
     </nav>
@@ -53,7 +54,7 @@ export default {
         return;
       } else {
         try {
-      const response = await fetch('https://kacper-ecojourney2.onrender.com/api/protected', {
+      const response = await fetch('https://carbonjourneyplanner.onrender.com/api/protected', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -138,7 +139,25 @@ export default {
   background:linear-gradient(90deg, rgb(99, 181, 143),rgb(24, 136, 4));
   position:sticky;
   z-index: 10;
-  -webkit-box-shadow: 0px 0px 31px -10px #000000; 
-box-shadow: 0px 0px 31px -10px #000000;
+  -webkit-box-shadow: 0px 0px 31px -12px #000000; 
+box-shadow: 0px 0px 31px -12px #000000;
+}
+ 
+
+.fade-enter-active,
+.fade-leave-active {
+  transition: opacity 0.05s ease;
+}
+
+.fade-enter-from,
+.fade-leave-to {
+  position: relative;
+  opacity: 0;
+}
+#logo {
+  margin-left: 0.6rem;
+}
+.navbar {
+  padding: 0 !important;
 }
 </style>
