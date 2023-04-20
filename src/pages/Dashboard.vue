@@ -1,9 +1,5 @@
 <template>
-      <div v-if="isLoading" class="loading-wheel">
-    <div class="loading-dot"></div>
-    <div class="loading-dot"></div>
-    <div class="loading-dot"></div>
-    </div>
+  
   <div class="buttons-container">
     <a class="dashboard-item button-individual" @click="currTab = 'Tab1'; createChart()">Individual</a>
     <a class="dashboard-item button-group" :class="{ disabled: isTab2Disabled }" @click="currTab = 'Tab2'" :style="{ color: tab2Color }">Group</a>
@@ -207,7 +203,7 @@ export default {
   data() {
     return {
       // journes data, example: [{UserID: 1, CO2Output: 200}]
-      journeyArray: [],
+      journeyArray: [{id: 2, date: "04/04/2023", Start: "Manchester", Destination: "Southampton", distance: 127, co2Output: 2030}],
       highlightUserID: null,
       loggedUserData: {userID: 4, co2Output: 305, distance: 490},
       loggedUserJourneys: [],
