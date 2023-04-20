@@ -1,4 +1,9 @@
 <template>
+      <div v-if="isLoading" class="loading-wheel">
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    <div class="loading-dot"></div>
+    </div>
   <div class="buttons-container">
     <a class="dashboard-item button-individual" @click="currTab = 'Tab1'; createChart()">Individual</a>
     <a class="dashboard-item button-group" :class="{ disabled: isTab2Disabled }" @click="currTab = 'Tab2'" :style="{ color: tab2Color }">Group</a>
