@@ -191,7 +191,7 @@
 <script>
 //import co2 data calculation functions
 import Swal from 'sweetalert2';
-import * as dataCalcFunctions from "@/dataFunctionsTEST.js";
+import * as dataCalcFunctions from "@/dataFunctions.js";
 const axios = require('axios');
 //import { toFormData } from "axios";
 
@@ -221,8 +221,10 @@ export default {
     }},
   
   async created() {
-    console.log(this.userID)
     console.log("ASDAKJSAKDKSADSADSALDSALK");
+
+    console.log("ASDAKJSAKDKSADSADSALDSALK");
+
 
   },
 
@@ -249,6 +251,63 @@ mounted() {
     r2.style.display="none";
     var r3 = document.getElementById("row3")
     r3.style.display="none";
+
+    global.mapStyle = [
+                  {
+                      "featureType": "all",
+                      "elementType": "labels.text",
+                      "stylers": [
+                          {
+                              "color": "#878787"
+                          }
+                      ]
+                  },
+                  {
+                      "featureType": "all",
+                      "elementType": "labels.text.stroke",
+                      "stylers": [
+                          {
+                              "visibility": "off"
+                          }
+                      ]
+                  },
+                  {
+                      "featureType": "landscape",
+                      "elementType": "all",
+                      "stylers": [
+                          {
+                              "color": "#f9f5ed"
+                          }
+                      ]
+                  },
+                  {
+                      "featureType": "road.highway",
+                      "elementType": "all",
+                      "stylers": [
+                          {
+                              "color": "#f5f5f5"
+                          }
+                      ]
+                  },
+                  {
+                      "featureType": "road.highway",
+                      "elementType": "geometry.stroke",
+                      "stylers": [
+                          {
+                              "color": "#c9c9c9"
+                          }
+                      ]
+                  },
+                  {
+                      "featureType": "water",
+                      "elementType": "all",
+                      "stylers": [
+                          {
+                              "color": "#aee0f4"
+                          }
+                      ]
+                  },
+              ]
 
   };
 
@@ -296,11 +355,36 @@ mounted() {
         }; 
 
         if (row1Selected && row1Selected.value === "Plane") {
-          global.vehcalType = "plane";
+          global.vehcalType = "Plane";
           var regfrom = document.getElementById("reg-form")
           regfrom.style.display="none";
-          var outputArray = outputArrayEmpty
-          outputArray.mode = row1Selected.value
+
+          var distanceDisplay = document.getElementById("distance");
+          distanceDisplay.value = planeDistance.toFixed(0);
+
+          var planeEmissions = planeDistance *0.19;
+          var emissionsInput = document.getElementById("emissions");
+          emissionsInput.value = planeEmissions.toFixed(0);
+
+          const timeInHours = planeDistance / 750;
+          const timeInMinutes = timeInHours * 60;
+          var durationInput = document.getElementById("duration");
+          const totalMinutes4 = Math.round(timeInMinutes);
+          // Calculate the hours and minutes
+          const hours1 = Math.floor(totalMinutes4 / 60);
+          const minutes1 = totalMinutes4 % 60;
+          // Format the time string as hh:mm
+          const timeString1 = `${hours1.toString().padStart(2, '0')}:${minutes1.toString().padStart(2, '0')}`;
+          durationInput.value = timeString1;
+
+          //populates the custom bar in barchart
+          var customAverageCo2PerKm = ((planeEmissions * 1000) / planeDistance).toFixed(0);
+          var customValue = document.querySelector('.custom + .value');
+          var customBar = document.querySelector('.custom');
+          customBar.style.width = customAverageCo2PerKm + 'px';
+          customValue.textContent = customAverageCo2PerKm + ' g/km';
+          console.log("PLANE VALUE",customAverageCo2PerKm)
+
         }
         if (row1Selected && row1Selected.value === "Transit") {
           global.vehcalType = "Transit";
@@ -434,6 +518,7 @@ mounted() {
           zoom: z,
           mapTypeControl: false,
           disableDefaultUI: true,
+          styles:mapStyle
           //mapTypeId: 'satellite'
         });
         let marker = new google.maps.Marker({
@@ -443,6 +528,7 @@ mounted() {
         });
       };
     },
+   
     showMessage(title, text, icon) {
       Swal.fire({
         title: title,
@@ -476,7 +562,7 @@ mounted() {
       duration: timeHHMMLogValue
   };
 
-    axios.post('https://carbonjourneyplanner.onrender.com/users/addJourney', journeyData)
+    axios.post('https://carbonjourneyplanner.onrender.com/addJourney', journeyData)
       .then((response) => {
         console.log(response.data);
         this.showMessage('Success!', response.data.message, 'success');
@@ -538,8 +624,8 @@ mounted() {
         dvlaErrorElement.textContent = dvlaErrorString;
         dvlaErrorElement.classList.remove('fade-out'); // remove the fade-out class if it was applied before
         
-        var emissionsInput = document.getElementById("emissions");
-        emissionsInput.value = (0);
+        // var emissionsInput = document.getElementById("emissions");
+        // emissionsInput.value = (0);
 
         // after 3 seconds, apply the fade-out class to the error message
         setTimeout(() => {
@@ -584,10 +670,10 @@ mounted() {
     // call the second function after 5 seconds
     setTimeout(() => {
       this.callingBarChart();
-    }, 1000);
+    }, 2500);
     },
 
-    submitForm() {
+    async submitForm() {
       //sets date to todays date
       const today = new Date().toISOString().substr(0, 10);
       document.getElementById("date").value = today;
@@ -620,7 +706,7 @@ mounted() {
           if (status == google.maps.GeocoderStatus.OK) {
             global.originLatLng = results[0].geometry.location;
             console.log(originLatLng)
-            geocoder.geocode({ address: destination }, function (results, status) {
+            geocoder.geocode({ address: destination }, async function (results, status) {
               if (status == google.maps.GeocoderStatus.OK) {
                 global.destLatLng = results[0].geometry.location;
 
@@ -628,7 +714,8 @@ mounted() {
                 let map = new google.maps.Map(document.getElementById("map"), {
                   zoom: 8,
                   center: originLatLng,
-                  mapTypeControl: false
+                  mapTypeControl: false,
+                  styles:mapStyle
                 });
                 let marker1 = new google.maps.Marker({
                   position: originLatLng,
@@ -712,12 +799,12 @@ mounted() {
                       var travelMode = steps[i].travel_mode;
                       if (travelMode === 'TRANSIT') {
                         var transitType = steps[i].transit.line.vehicle.type;
-                        console.log("Leg " + (i+1) + " distance: " + legDistance + " (travel mode: " + transitType + ")");
+                        //console.log("Leg " + (i+1) + " distance: " + legDistance + " (travel mode: " + transitType + ")");
                         transitCo2Output = transitCo2Output + dataCalcFunctions.calculatePublicTransportCO2(transitType ,(legDistanceValue/1000))
                       } else {
-                        console.log("Leg " + (i+1) + " distance: " + legDistance + " (travel mode: " + travelMode + ")");
+                        //console.log("Leg " + (i+1) + " distance: " + legDistance + " (travel mode: " + travelMode + ")");
                       }
-                      console.log("Public transport directions", steps[i].instructions);
+                      //console.log("Public transport directions", steps[i].instructions);
                       instructions_public_transport += (i+1)+ ") " + steps[i].instructions + "<br>";
 
                     }
@@ -738,9 +825,12 @@ mounted() {
                     var textOutputTransit = "Public Transport Distance: " + transitDistance
                   
                     const transitDistanceNumber = parseFloat(transitDistance.replace("km", ""));
+                    global.transitDistanceNumber1 = transitDistanceNumber;
                     global.transitCo2Average = (transitCo2Output * 1000) / transitDistanceNumber
                     console.log("transit co2 / distance=",(transitCo2Average))
-                    console.log("TESTTT")
+                    console.log(transitDistanceNumber)
+                    console.log(transitCo2Output)
+
                     //barChartUpdate(0, 138.4, transitCo2Average, 3);
 
 
@@ -796,7 +886,7 @@ mounted() {
 
                     // loop through the steps and log the instructions
                     for (var i = 0; i < steps.length; i++) {
-                    console.log("Walk directions",steps[i].instructions);
+                    //console.log("Walk directions",steps[i].instructions);
                     instructions_walk += (i+1)+ ") " + steps[i].instructions + "<br>";
                     }
 
@@ -819,8 +909,107 @@ mounted() {
                   }
                 });
 
+              // --- PLANE --- //
 
 
+              const dataOrigin = {
+                latitude: global.originLatLng.lat(),
+                longitude: global.originLatLng.lng()
+              };
+
+              const dataDest = {
+                latitude: global.destLatLng.lat(),
+                longitude: global.destLatLng.lng()
+              };
+
+              const config = {
+                headers: {
+                  'Content-Type': 'application/json'
+                }
+              };
+              try {
+
+                await axios.post("https://carbonjourneyplanner.onrender.com/getNearestAirport", dataOrigin, config)
+                  .then((response) => {
+                    console.log(response.data);
+                    global.closestAirportOriginLat = (response.data.lat);
+                    global.closestAirportOriginLg = (response.data.lng);
+  
+                  })
+                  .catch((error) => {
+                    console.error(error);
+                  });
+              } catch(e) {
+
+              }
+              try {
+                await axios.post("https://carbonjourneyplanner.onrender.com/getNearestAirport", dataDest, config)
+                .then((response) => {
+                  console.log(response.data);
+                  global.closestAirportDestLat = (response.data.lat);
+                  global.closestAirportDestLg = (response.data.lng);
+                })
+                .catch((error) => {
+                  
+                  console.error(error);
+                });
+
+              } catch(e) {
+                console.log(e)
+              }
+
+              //PLOT PLANE ROUTE
+              setTimeout(() => {
+              if (transitDistanceNumber1 > 350){
+
+              
+                  var originAirport = {lat:closestAirportOriginLat, lng:closestAirportOriginLg}; 
+                  var destinationAirport = {lat:closestAirportDestLat, lng:closestAirportDestLg};
+
+                  // Latitude and Longitude of the first location
+                  const lat1 = closestAirportOriginLat;
+                  const lon1 = closestAirportOriginLg;
+
+                  // Latitude and Longitude of the second location
+                  const lat2 = closestAirportDestLat;
+                  const lon2 = closestAirportDestLg;
+
+                  // Convert degrees to radians
+                  const deg2rad = (deg) => deg * (Math.PI/180);
+
+                  // Calculate distance in kilometers
+                  const R = 6371; // Radius of the earth in km
+                  const dLat = deg2rad(lat2-lat1);
+                  const dLon = deg2rad(lon2-lon1);
+                  const a =
+                    Math.sin(dLat/2) * Math.sin(dLat/2) +
+                    Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+                    Math.sin(dLon/2) * Math.sin(dLon/2);
+                  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                  global.planeDistance = R * c;
+
+                  console.log(planeDistance); // Output: 4158.627012222793 km
+                  
+                  //Define the path between the origin and destination points
+                  var path = [originAirport, destinationAirport];
+                    
+                    // Draw a Polyline between the origin and destination points
+                    //let currentMap = new google.maps.Map(document.getElementById("map"))
+                    var polyline = new google.maps.Polyline({
+                      path: path,
+                      geodesic: true,
+                      strokeColor: "red",
+                      strokeOpacity: 1.0,
+                      strokeWeight: 2,
+                    });
+
+                    polyline.setMap(map);
+
+                    const bounds = new google.maps.LatLngBounds();
+                    bounds.extend(originAirport);
+                    bounds.extend(destinationAirport);
+                    map.fitBounds(bounds);
+                  };}, 1500);
 
 
 
@@ -1236,7 +1425,7 @@ button i {
     }
 
     #walkButton:checked{
-      background-color: #006b3e;
+      background-color: #6197d7;
     }
 
     #transitButton:checked{
@@ -1253,7 +1442,7 @@ button i {
       border:3px solid #ffe733;
     }
     #walkButton{
-      border:3px solid #006b3e;
+      border:3px solid #6197d7;
     }
 
 
@@ -1498,6 +1687,6 @@ button i {
       background-color: yellow;
     }
     .walk{
-      background-color: green;
+      background-color: #6197d7;
     }
 </style>

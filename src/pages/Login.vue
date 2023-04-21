@@ -101,7 +101,7 @@
     <thead>
       <tr>
         <th>Rank</th>
-        <th>Nickname</th>
+        <th>Username</th>
       </tr>
     </thead>
     <tbody>
