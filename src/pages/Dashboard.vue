@@ -117,15 +117,13 @@
       </div>
     </div>
 
-    <div v-if="Object.keys(this.modeOfTransportCounts).length">
-    <div class="doughnut-chart-title">
+    <div class="doughnut-chart-title" v-if="Object.keys(this.modeOfTransportCounts).length">
       <h2>Mode of Transport Usage</h2>
     </div>
 
     <div class="chart-container" >
         <canvas id="myChart2"></canvas>
     </div>
-  </div>
     
   </div>
 
