@@ -253,7 +253,7 @@
           console.log("HELLO")
           console.log(this.userID)
           try {
-              await axios.get('http://localhost:3000/getJourneys')
+              await axios.get('https://carbonjourneyplanner.onrender.com/getJourneys')
           .then(response => {
             console.log("HELLOO")
             console.log(response.data)
