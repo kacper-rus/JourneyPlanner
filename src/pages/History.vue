@@ -278,6 +278,7 @@
               });
               console.log(modifiedJourneyArray)
               modifiedJourneyArray = modifiedJourneyArray.filter(x => x.userID == this.userID)
+              modifiedJourneyArray.sort((a, b) => b.id - a.id);
             this.history = modifiedJourneyArray
             this.filteredHistory = modifiedJourneyArray
             console.log(modifiedJourneyArray)
