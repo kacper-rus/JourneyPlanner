@@ -90,26 +90,26 @@
     <div class="statistics-container">
       <div class="statistic">
         <h4>Average CO2 Output</h4>
-        <p>{{ this.loggedUserData.co2Output && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.co2Output / Object.keys(this.loggedUserJourneys).length).toFixed(2) : 0 }} Kg</p>
+        <p>{{ this.loggedUserData && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.co2Output / Object.keys(this.loggedUserJourneys).length).toFixed(2) : 0 }} Kg</p>
       </div>
       <div class="statistic">
         <h4>Total CO2 Output</h4>
-        <p>{{ this.loggedUserData.co2Output?  this.loggedUserData.co2Output: 0}} Kg</p>
+        <p>{{ Object.keys(this.loggedUserJourneys).length?  this.loggedUserData.co2Output: 0}} Kg</p>
       </div>
       <div class="statistic">
         <h4>Total Distance Travelled</h4>
-        <p>{{ this.loggedUserData.distance?  this.loggedUserData.distance: 0}} Km</p>
+        <p>{{ Object.keys(this.loggedUserJourneys).length?  this.loggedUserData.distance: 0}} Km</p>
       </div>
     </div>
 
     <div class="statistics-container">
       <div class="statistic">
         <h4>Average CO2 Output Per Km</h4>
-        <p>{{ this.loggedUserData.distance && this.loggedUserData.co2Output ? (this.loggedUserData.co2Output / this.loggedUserData.distance).toFixed(2) : 0 }} Kg</p>
+        <p>{{ this.loggedUserData && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.co2Output / this.loggedUserData.distance).toFixed(2) : 0 }} Kg</p>
       </div>
       <div class="statistic">
         <h4>Average Journey Length</h4>
-        <p>{{ this.loggedUserData.distance && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.distance / Object.keys(this.loggedUserJourneys).length).toFixed(2) : 0 }} Km</p>
+        <p>{{ this.loggedUserData && Object.keys(this.loggedUserJourneys).length ? (this.loggedUserData.distance / Object.keys(this.loggedUserJourneys).length).toFixed(2) : 0 }} Km</p>
       </div>
       <div class="statistic">
         <h4>Total Journey Count</h4>
@@ -117,13 +117,15 @@
       </div>
     </div>
 
+    <div v-if="Object.keys(this.modeOfTransportCounts).length">
     <div class="doughnut-chart-title">
       <h2>Mode of Transport Usage</h2>
     </div>
 
-    <div class="chart-container">
+    <div class="chart-container" >
         <canvas id="myChart2"></canvas>
     </div>
+  </div>
     
   </div>
 
@@ -205,7 +207,7 @@ export default {
       // journes data, example: [{UserID: 1, CO2Output: 200}]
       journeyArray: [{id: 2, date: "04/04/2023", Start: "Manchester", Destination: "Southampton", distance: 127, co2Output: 22}],
       highlightUserID: null,
-      loggedUserData: {userID: 4, co2Output: 305, distance: 490},
+      loggedUserData: {userID: 4, co2Output: 0, distance: 0},
       loggedUserJourneys: [],
       filteredDatabyDate: [],
       currTab: 'Tab1',
