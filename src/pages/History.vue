@@ -1,17 +1,18 @@
 <template>
   <div class="content-wrapper">
-      <div class="container">
-        <!-- Displays the date picker -->
-        <div class="datepicker">
+    <div class="container">
+      <!-- Displays the date picker -->
+      <div class="datepicker">
         <label style="font-weight: bold;">Filter by date:</label>
         <VueDatePicker v-model="date" :enable-time-picker="false" range></VueDatePicker>
       </div>
       <div v-if="isLoading" class="loading-wheel">
-      <div class="loading-dot"></div>
-      <div class="loading-dot"></div>
-      <div class="loading-dot"></div>
-    </div>
-        <div v-for="entry in filteredJourneys" :key="entry.JourneyId" v-else>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+        <div class="loading-dot"></div>
+      </div>
+      <div v-else-if="this.filteredJourneys.length">
+        <div v-for="entry in filteredJourneys" :key="entry.JourneyId">
           <div class="history-entry">
             <label class="entry-date">{{ entry.date }}</label>
             <div class="history-entry-row" v-on:click="setActive(entry.id)">
@@ -32,22 +33,26 @@
             <div>
               <hr v-if="activeID == entry.id"/>
               <div class="history-entry-row" v-if="activeID == entry.id">
-                  <iframe
-                    width="100%"
-                    height="500"
-                    frameborder="0" style="border:0; background-color: #E5E3DF;"
-                    referrerpolicy="no-referrer-when-downgrade"
-                    v-bind:src="'https://www.google.com/maps/embed/v1/directions?key=AIzaSyD3Se0UUiSx8PP5c7m4XGwSyLmZ_1dOw0I&origin=' + entry.Start + '&destination=' + entry.Destination"
-                    allowfullscreen>
-                  </iframe>
+                <iframe
+                  width="100%"
+                  height="500"
+                  frameborder="0" style="border:0; background-color: #E5E3DF;"
+                  referrerpolicy="no-referrer-when-downgrade"
+                  v-bind:src="'https://www.google.com/maps/embed/v1/directions?key=AIzaSyD3Se0UUiSx8PP5c7m4XGwSyLmZ_1dOw0I&origin=' + entry.Start + '&destination=' + entry.Destination"
+                  allowfullscreen>
+                </iframe>
               </div>
             </div>
           </div>
         </div>
-        <!-- button that runs test method -->
+      </div>
+      <div style="text-align:center; color:gray" v-else>
+        <h2>Sorry, there are no registered journeys at this date</h2>
+        <h3>Please head to the journey planner to plan your next journey</h3>
       </div>
     </div>
-    </template>
+  </div>
+</template>
     <script>
     /* eslint-disable */
     import { ref, reactive } from 'vue'
