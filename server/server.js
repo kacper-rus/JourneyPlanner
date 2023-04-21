@@ -1,4 +1,4 @@
-
+const express = require('express')
 const app = require('./app');
 const mysql = require('mysql');
 const { db } = require('./users/emissions.control');
@@ -6,7 +6,9 @@ const bcrypt = require('bcrypt')
 const jwt = require('jsonwebtoken');
 const axios = require('axios');
 const secretKey = 'secret';
+const path = require('path')
 
+app.use(express.static(path.join(__dirname, '..' ,'dist')))
 
 app.get('/', (req, res) => {
 
@@ -284,7 +286,6 @@ app.post('/createGroup', async (req, res) => {
       db.query(sql, [ userID, journeyName, modeOfTransport, journeyDate, startPoint, endPoint, co2Output, distance, duration], (error, results) => {
   
         if (error) {
-          console.log(error)
           console.log(error.sqlMessage)
           return res.status(409).json({ message: error.sqlMessage });
         } else {
@@ -346,6 +347,26 @@ app.post('/createGroup', async (req, res) => {
   }
   
 
+  const intervalInMilliseconds = 100 * 1000;
+
+  // Define the function to execute the database query
+  const executeQuery = () => {
+    const sql = 'SELECT * FROM `users`';
+    db.query(sql, (err) => {
+      if (err) {
+        console.error('An unexpected error occurred while fetching users.', err);
+        return;
+      }
+      console.log("Fecther data");
+    });
+  };
+  
+  // Call the function immediately to execute the query once
+  executeQuery();
+  
+  // Call the function every minute to keep the database connection alive
+  setInterval(executeQuery, intervalInMilliseconds);
+  
   async function getNearestAirport(latitude, longitude, apiKey) {
     const url = `https://maps.googleapis.com/maps/api/place/nearbysearch/json?location=${latitude},${longitude}&rankby=distance&type=airport&key=${apiKey}`;
     const response = await axios.get(url);
@@ -363,18 +384,7 @@ app.post('/createGroup', async (req, res) => {
   }
   
   
-  // Example usage
-  const apiKey = 'AIzaSyA5K5yoDu6AnALOdV-VzcINZg1bKXH5-TA';
-  const latitude = 52.9540;
-  const longitude = -1.1550;
-  
-  getNearestAirport(latitude, longitude, apiKey)
-    .then((result) => {
-      console.log(`Nearest airport: ${result.name}, Location: ${result.location.lat}, ${result.location.lng}`);
-    })
-    .catch((error) => {
-      console.error(error);
-    });
+
 
 
 app.post('/getNearestAirport', async (req, res) => { 
@@ -392,6 +402,11 @@ app.post('/getNearestAirport', async (req, res) => {
     });
 
 })
+
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '..' ,'dist', 'index.html'))
+  })
+  
 // Server 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
