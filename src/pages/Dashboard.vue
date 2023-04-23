@@ -13,7 +13,7 @@
     <vue-speedometer 
       :width="500"
       :needleHeightRatio="0.7"
-      :value="convertToSpeedometer((journeyArray[0].co2Output/journeyArray[0].distance).toFixed(2) ? (journeyArray[0].co2Output/journeyArray[0].distance).toFixed(2) : 0)"
+      :value="convertToSpeedometer((loggedUserData.co2Output/loggedUserData.distance).toFixed(2) ? (loggedUserData.co2Output/loggedUserData.distance).toFixed(2) : 0)"
       :segmentColors='["limegreen", "yellowgreen", "gold", "orange", "tomato"]'
       currentValueText="CO2 Output per Km (kg)"
       :customSegmentLabels='[
