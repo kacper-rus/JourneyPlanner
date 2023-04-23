@@ -562,7 +562,7 @@ mounted() {
       duration: timeHHMMLogValue
   };
 
-    axios.post('https://carbonjourneyplanner.onrender.com/addJourney', journeyData)
+    axios.post('https://carbonjourneyplanner.onrender.com//users/addJourney', journeyData)
       .then((response) => {
         console.log(response.data);
         this.showMessage('Success!', response.data.message, 'success');

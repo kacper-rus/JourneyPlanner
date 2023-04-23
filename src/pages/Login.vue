@@ -199,7 +199,7 @@ export default {
               this.registerUsername = '';
               this.registerErrorMsg = '';
               this.startConfetti();
-              this.registerSuccMsg = "Congratulations! You are one step closer to safe the planet from Co2! :)"
+              this.registerSuccMsg = "Congratulations! You are one step closer to save the planet from Co2! :)"
             });
           }
           else {
